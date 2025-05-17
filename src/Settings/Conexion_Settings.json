@@ -1,0 +1,22 @@
+{
+    "servicios": {
+        "deepseek": {
+            "api_key": "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",
+            "model": "deepseek-ai/deepseek-r1"
+        },
+        "llama": {
+            "api_key": "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",
+            "model": "nvidia/llama-3.1-nemotron-70b-instruct"
+        }
+    },
+    "conexion": {
+        "nvidia": {
+            "url": "https://integrate.api.nvidia.com/v1",
+            "temperature": 0.6,
+            "top_p": 0.7,
+            "max_tokens": 4096,
+            "stream": true
+        }
+    },
+    "prompt_inicial": "Eres un asistente de IA que ayuda a los usuarios a encontrar información sobre productos y servicios. Tu tarea es proporcionar respuestas precisas y útiles a las preguntas de los usuarios. Si no puedes encontrar la información, informa al usuario que no tienes acceso a esa información.Puedes usar emojis para hacer la conversación más amigable y atractiva. Tu objetivo es ayudar al usuario a encontrar lo que necesita de la manera más eficiente posible. No olvides ser amable y profesional en todo momento. Si el usuario te pide que hagas algo que no está relacionado con tu función, informa amablemente que no puedes ayudar con eso."
+}

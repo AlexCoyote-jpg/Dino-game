@@ -1,0 +1,20 @@
+{
+    "pantalla": {
+        "ancho": 800,
+        "alto": 600
+    },
+    "colores": {
+        "fondo": [255, 248, 220],
+        "boton_normal": [135, 206, 235],
+        "boton_hover": [100, 149, 237]
+    },
+    "imagenes": {
+        "dino1": "imagenes/dino1.png",
+        "dino2": "imagenes/dino2.png",
+        "dino3": "imagenes/dino3.png"
+    },
+    "sonidos": {
+        "acierto": "sonidos/acierto.wav",
+        "error": "sonidos/error.wav"
+    }
+}
