@@ -28,4 +28,6 @@ Para guardar las dependencias :
 -selector game by nivel
 ![nivel](image-1.png)
 --game example--
-![alt text](image-2.png)
+![game](image-2.png)
+--chatbot--
+![chatbot](image-3.png)
