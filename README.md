@@ -17,20 +17,10 @@ Instala las libreria al entorno virtual: pip install -r requirements.txt
 Listo ahora solo ejecuta main.py 
 
 
-Si el entorno virtual no cuenta con alguna libreria o no cargo todas:
-(Recuerda debe estar activado el entorno virtual)
-Tiene que tener instalado python python --version
-Liberias
--PIP: python get-pip.py,pip install --upgrade pip, pip --versión,
--PYGAME Y OPEINAI: pip install pygame openai
--Pygame-gui:pip install pygame_gui
--Emojis: pip install emoji
-
-Nota: Si quieres instalar automaticamente todas las libreria ejecuta python setup.py 
 
 Para guardar las dependencias : 
 -Ejecuta : pip freeze > requirements.txt
--Modifica: setup.py
+
 
 --Menu Principal--
 -home
