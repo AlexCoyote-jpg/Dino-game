@@ -304,12 +304,7 @@ class JuegoMemoriaJurasica(JuegoBase):
 
         # --- Victoria ---
         if self.nivel_completado:
-            self.mostrar_victoria(
-                self.pantalla,
-                lambda v: v, lambda v: v, self.pantalla.get_width(), self.pantalla.get_height(),
-                self.fuente_titulo, self.fuente,
-                self, self.carta_rects
-            )
+            self.mostrar_victoria(self.carta_rects)
 
         # --- Botón de silenciar ---
         img_size = 32
