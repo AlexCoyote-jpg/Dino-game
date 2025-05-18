@@ -44,16 +44,20 @@ class JuegoRescate(JuegoBase):
         super().init_responsive_ui()
         sx, sy = self.sx, self.sy
         mx = sx(40)
+        # Calcula Y de instrucciones justo debajo del título
+        title_y, title_h = self.ui_elements["titulo_rect"][1], self.ui_elements["titulo_rect"][3]
+        instr_y = title_y + title_h + sy(15)
+
         self.ui_elements.update({
-            "instr_rect":      (mx, self.navbar_height+sy(50), self.ANCHO-2*mx, sy(40)),
-            "img_area_top":    self.navbar_height + sy(100),
+            "instr_rect":      (mx, instr_y, self.ANCHO-2*mx, sy(40)),
+            "img_area_top":    instr_y + sy(60),      # ajusta top de imágenes debajo de la instrucción
             "img_area_h":      sy(120),
             "spacing":         sx(30),
             "roca_espacio":    sx(80),
             "dino_size":       (sx(80), sy(80)),
             "roca_size":       (sx(60), sy(60)),
-            "enunciado_rect":  (mx, self.navbar_height+sy(100)+sy(120)+sy(10), self.ANCHO-2*mx, sy(60)),
-            "opciones_y":      self.navbar_height+sy(100)+sy(120)+sy(10)+sy(60)+sy(10)
+            "enunciado_rect":  (mx, instr_y + sy(60) + sy(120) + sy(10), self.ANCHO-2*mx, sy(60)),
+            "opciones_y":      instr_y + sy(60) + sy(120) + sy(10) + sy(60) + sy(10)
         })
 
     def _ajustar_imagenes(self):
