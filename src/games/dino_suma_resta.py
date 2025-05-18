@@ -49,45 +49,45 @@ class JuegoSumaResta(JuegoBase):
     def __init__(self, pantalla, config, dificultad, fondo, navbar, images, sounds, return_to_menu=None):
         super().__init__('Dino Suma y Resta', pantalla, config, dificultad, fondo, navbar, images, sounds, return_to_menu)
         self.nivel_actual = self._nivel_from_dificultad(dificultad)
-        self.puntuacion = 0
-        self.jugadas_totales = 0
+        self.puntuacion = self.jugadas_totales = 0
         self.tiempo_mensaje = 0
         self.mensaje = ""
-        self.dino_img_orig = images.get("dino1") if images else None
-        self.cueva_img_orig = images.get("cueva") if images else None
-        self.piedrita_orig = images.get("piedrita") if images else None
+
+        # Diccionarios para imágenes originales, escaladas y sus tamaños
+        self.original_images = {
+            'dino': images.get("dino1") if images else None,
+            'cueva': images.get("cueva") if images else None,
+            'piedrita': images.get("piedrita") if images else None
+        }
+        self.scaled_images = {}
+        self.sizes = {}
+
         self._ajustar_imagenes()
         self.generar_problema()
 
     def _ajustar_imagenes(self):
-        # Calcula nuevas dimensiones
-        nuevo_dino_w = min(int(self.sx(120)), 140)
-        nuevo_dino_h = min(int(self.sy(120)), 140)
-        nuevo_piedrita_w = min(int(self.sx(44)), 48)
-        nuevo_piedrita_h = min(int(self.sy(44)), 48)
+        # Defino una vez los nuevos tamaños
+        targets = {
+            'dino':    (min(int(self.sx(120)), 140), min(int(self.sy(120)), 140)),
+            'cueva':   (min(int(self.sx(120)), 140), min(int(self.sy(120)), 140)),
+            'piedrita':(min(int(self.sx(44)),  48),  min(int(self.sy(44)),  48)),
+        }
+        # Reescalo sólo si hay cambio
+        for key, size in targets.items():
+            if self.sizes.get(key) != size and self.original_images.get(key):
+                self.sizes[key] = size
+                self.scaled_images[key] = pygame.transform.smoothscale(self.original_images[key], size)
 
-        # Evita reprocesar si no cambió el tamaño
-        if (
-            hasattr(self, 'dino_w') and
-            self.dino_w == nuevo_dino_w and
-            self.dino_h == nuevo_dino_h and
-            self.piedrita_w == nuevo_piedrita_w and
-            self.piedrita_h == nuevo_piedrita_h
-        ):
-            return  # No recalcular transformaciones
+        # Desempaqueto para mantener compatibilidad con el resto de la clase
+        self.dino_w, self.dino_h       = targets['dino']
+        self.cueva_w, self.cueva_h     = targets['cueva']
+        self.piedrita_w, self.piedrita_h = targets['piedrita']
 
-        # Asigna las dimensiones actualizadas
-        self.dino_w, self.dino_h = nuevo_dino_w, nuevo_dino_h
-        self.cueva_w, self.cueva_h = self.dino_w, self.dino_h
-        self.piedrita_w, self.piedrita_h = nuevo_piedrita_w, nuevo_piedrita_h
-
-        # Transforma solo si hay imágenes originales
-        if self.dino_img_orig:
-            self.dino_img = pygame.transform.smoothscale(self.dino_img_orig, (self.dino_w, self.dino_h))
-        if self.cueva_img_orig:
-            self.cueva_img = pygame.transform.smoothscale(self.cueva_img_orig, (self.cueva_w, self.cueva_h))
-        if self.piedrita_orig:
-            self.piedrita = pygame.transform.smoothscale(self.piedrita_orig, (self.piedrita_w, self.piedrita_h))
+    def cambiar_imagen(self, key, nueva_img):
+        """Único método para reemplazar cualquiera de las imágenes."""
+        if key in self.original_images:
+            self.original_images[key] = nueva_img
+            self._ajustar_imagenes()
 
     def generar_problema(self):
         self.problema_actual, self.respuesta_correcta = generar_problema_suma_resta(self.nivel_actual)
@@ -126,42 +126,36 @@ class JuegoSumaResta(JuegoBase):
         )
 
     def dibujar_imagenes(self):
-        margen_x = self.sx(40)
-        area_top = self.navbar_height + self.sy(110)  # Un poco más arriba para dar espacio al enunciado
-        area_img_h = self.sy(140)
-        espacio_entre = self.sx(170)  # Aumenta la separación entre dino y cueva
-        block_width = self.dino_w + espacio_entre + self.cueva_w
-        start_x = (self.ANCHO - block_width) // 2
-        area_img_y = area_top
+        pantalla = self.pantalla
+        # Obtengo las imágenes ya escaladas
+        dino_img    = self.scaled_images.get('dino')
+        cueva_img   = self.scaled_images.get('cueva')
+        piedrita    = self.scaled_images.get('piedrita')
 
-        # Centrado vertical de las imágenes en el área asignada
-        dino_y = area_img_y + area_img_h // 2 - self.dino_h // 2
-        cueva_y = area_img_y + area_img_h // 2 - self.cueva_h // 2
+        margen_x    = self.sx(40)
+        area_top    = self.navbar_height + self.sy(110)
+        area_img_h  = self.sy(140)
+        espacio     = self.sx(170)
+        block_w     = self.dino_w + espacio + self.cueva_w
+        start_x     = (self.ANCHO - block_w) // 2
 
-        # Coordenadas de dino y cueva
-        dino_x = start_x
-        cueva_x = start_x + self.dino_w + espacio_entre
+        dino_x      = start_x
+        cueva_x     = start_x + self.dino_w + espacio
+        dino_y      = area_top + area_img_h//2 - self.dino_h//2
+        cueva_y     = area_top + area_img_h//2 - self.cueva_h//2
 
-        # Dibujar dino y cueva
-        if self.dino_img:
-            self.pantalla.blit(self.dino_img, (dino_x, dino_y))
-        if self.cueva_img:
-            self.pantalla.blit(self.cueva_img, (cueva_x, cueva_y))
+        if dino_img:  pantalla.blit(dino_img, (dino_x, dino_y))
+        if cueva_img: pantalla.blit(cueva_img, (cueva_x, cueva_y))
 
-        # Piedritas centradas entre dino y cueva, alineadas un poco arriba de los pies del dino
-        if self.piedrita:
-            n_piedritas = 3
-            # Centro horizontal entre dino y cueva
-            centro_piedritas_x = (dino_x + self.dino_w + cueva_x) // 2
-            # Un poco arriba de los pies del dino (ajusta sy(20) según lo que veas mejor)
-            piedritas_y = dino_y + self.dino_h - self.piedrita_h - self.sy(20)
-
-            total_piedritas_w = n_piedritas * self.piedrita_w + (n_piedritas - 1) * self.sx(8)
-            inicio_x = centro_piedritas_x - total_piedritas_w // 2
-
-            for i in range(n_piedritas):
-                x = inicio_x + i * (self.piedrita_w + self.sx(8))
-                self.pantalla.blit(self.piedrita, (x, piedritas_y))
+        if piedrita:
+            n = 3
+            centro = (dino_x + self.dino_w + cueva_x) // 2
+            y_p = dino_y + self.dino_h - self.piedrita_h - self.sy(20)
+            total_w = n*self.piedrita_w + (n-1)*self.sx(8)
+            x0 = centro - total_w//2
+            for i in range(n):
+                x = x0 + i*(self.piedrita_w + self.sx(8))
+                pantalla.blit(piedrita, (x, y_p))
 
     def dibujar_enunciado(self):
         margen_x = self.sx(40)
@@ -198,6 +192,7 @@ class JuegoSumaResta(JuegoBase):
         return False
 
     def update(self, dt=0):
+        super().update(dt)           # <-- actualiza desplazamiento de fondo
         self.update_animacion_estrellas()
         self.update_particulas()
 
@@ -205,23 +200,3 @@ class JuegoSumaResta(JuegoBase):
         self.ANCHO = ancho
         self.ALTO = alto
         self._ajustar_imagenes()
-
-    def cambiar_imagen_dino(self, nueva_img):
-        self.dino_img_orig = nueva_img
-        self._ajustar_imagenes()
-
-    def cambiar_imagen_cueva(self, nueva_img):
-        self.cueva_img_orig = nueva_img
-        self._ajustar_imagenes()
-
-    def cambiar_imagen_piedrita(self, nueva_img):
-        self.piedrita_orig = nueva_img
-        self._ajustar_imagenes()
-
-    def generar_opciones(self, respuesta, cantidad=4):
-        opciones = {respuesta}
-        while len(opciones) < cantidad:
-            delta = random.choice([-3, -2, -1, 1, 2, 3])
-            distractor = respuesta + delta
-            opciones.add(distractor)
-        return random.sample(list(opciones), k=cantidad)
