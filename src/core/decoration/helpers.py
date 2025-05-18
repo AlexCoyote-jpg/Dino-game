@@ -114,58 +114,74 @@ def dibujar_opciones(
 
 def mostrar_victoria(
     pantalla, sx, sy, ANCHO, ALTO, fuente_titulo, fuente, mostrar_alternativo_adaptativo,
-    mostrar_texto_adaptativo, Boton, dibujar_caja_texto, carta_rects, color_panel=(255, 255, 224), color_borde=(255, 215, 0)
+    mostrar_texto_adaptativo, Boton, dibujar_caja_texto, carta_rects, color_panel=(250, 250, 255), color_borde=(200, 210, 255)
 ):
-    """Muestra pantalla de victoria con escalado responsivo."""
-    ancho_panel = sx(500)
-    alto_panel = sy(200)
+    """Pantalla de victoria ligera, estética Apple HIG, amigable para juegos y niños."""
+    ancho_panel = sx(520)
+    alto_panel = sy(240)
     x_panel = (ANCHO - ancho_panel) // 2
     y_panel = (ALTO - alto_panel) // 2
-    panel = pygame.Surface((ancho_panel, alto_panel), pygame.SRCALPHA)
-    for i in range(alto_panel):
-        factor = i / alto_panel
-        r = int(255 - factor * 50)
-        g = int(250 - factor * 20)
-        b = int(150 + factor * 50)
-        pygame.draw.line(panel, (r, g, b, 240), (0, i), (ancho_panel, i))
-    pantalla.blit(panel, (x_panel, y_panel))
-    pygame.draw.rect(
-        pantalla, 
-        color_borde, 
-        (x_panel, y_panel, ancho_panel, alto_panel), 
-        4, 
-        border_radius=sy(20)
+
+    # Panel principal con fondo translúcido y borde suave
+    panel_rect = pygame.Rect(x_panel, y_panel, ancho_panel, alto_panel)
+    panel_surface = pygame.Surface((ancho_panel, alto_panel), pygame.SRCALPHA)
+    panel_surface.fill((*color_panel, 220))
+    pygame.draw.rect(panel_surface, color_borde, panel_surface.get_rect(), 4, border_radius=sy(32))
+    pantalla.blit(panel_surface, (x_panel, y_panel))
+
+    # Emoji grande y título
+    mostrar_texto_adaptativo(
+        pantalla, "🏅 ¡FELICIDADES! 🎉",
+        x_panel, y_panel + sy(18), ancho_panel, sy(48),
+        fuente_base=fuente_titulo,
+        color=(90, 140, 220),
+        centrado=True
     )
-    mostrar_alternativo_adaptativo(
-        pantalla, "¡FELICIDADES! 🎉",
-        x_panel, y_panel + sy(20), ancho_panel, sy(60),
-        fuente_titulo, (100, 160, 220), centrado=True
-    )
+
+    # Mensaje de victoria
     mostrar_texto_adaptativo(
         pantalla, "¡Has completado el memorama!",
-        x_panel, y_panel + sy(80), ancho_panel, sy(40),
-        fuente, (30, 30, 30), centrado=True
+        x_panel, y_panel + sy(70), ancho_panel, sy(32),
+        fuente_base=fuente,
+        color=(60, 60, 90),
+        centrado=True
     )
+
+    # Subtítulo decorativo
+    mostrar_texto_adaptativo(
+        pantalla, "¡Victoria! 🎉",
+        x_panel, y_panel + sy(105), ancho_panel, sy(32),
+        fuente_base=fuente_titulo,
+        color=(80, 120, 200),
+        centrado=True
+    )
+
+    # Botón de reinicio con sombra simple
+    boton_x = x_panel + (ancho_panel - sx(220)) // 2
+    boton_y = y_panel + sy(150)
+    boton_ancho = sx(220)
+    boton_alto = sy(48)
+
+    # Sombra del botón (solo un rect translúcido)
+    sombra_rect = pygame.Rect(boton_x, boton_y + sy(8), boton_ancho, boton_alto)
+    sombra_surface = pygame.Surface((boton_ancho, boton_alto), pygame.SRCALPHA)
+    sombra_surface.fill((120, 140, 180, 40))
+    pantalla.blit(sombra_surface, sombra_rect.topleft)
+
     boton = Boton(
         "¡Reiniciar! 🔄",
-        x_panel + (ancho_panel - sx(300)) // 2,
-        y_panel + sy(130),
-        sx(300), sy(50),
-        color_normal=(100, 160, 220),
-        color_hover=(30, 60, 120),
-        fuente=pygame.font.SysFont("Segoe UI Emoji", int(sy(28))),
-        texto_adaptativo=True
+        boton_x,
+        boton_y,
+        boton_ancho, boton_alto,
+        color_normal=(120, 180, 255),
+        color_hover=(80, 140, 220),
+        fuente=pygame.font.SysFont("Segoe UI Emoji", int(sy(24))),
+        texto_adaptativo=True,
+        border_radius=sy(22),
+        estilo="pill"
     )
     boton.draw(pantalla)
     carta_rects.append((boton.rect, {'id': 'siguiente'}))
-    dibujar_caja_texto(
-        pantalla, x_panel, y_panel, ancho_panel, alto_panel,
-        color=(220, 240, 255, 220),
-        radius=sy(16),
-        texto="¡Victoria! 🎉",
-        fuente=fuente_titulo,
-        color_texto=(30, 30, 60)
-    )
 
 def mostrar_operacion(pantalla, ANCHO, navbar_height, sx, sy, operacion_actual, sf, rect=None):
     """Muestra la operación matemática actual."""
