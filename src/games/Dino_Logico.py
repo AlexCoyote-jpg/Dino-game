@@ -13,33 +13,60 @@ class JuegoLogico(JuegoBase):
 
     def __init__(self, pantalla, config, dificultad, fondo, navbar, images, sounds, return_to_menu):
         super().__init__("Dino Lógico", pantalla, config, dificultad, fondo, navbar, images, sounds, return_to_menu)
-        # --- Carga de imágenes específicas del juego ---
+        # imágenes originales y escaladas
         self.cargar_imagenes()
-        # Estado del juego
-        self.nivel_actual = self._nivel_from_dificultad(dificultad)
-        self.puntuacion = 0
-        self.jugadas_totales = 0
-        self.racha = 0
-        self.tiempo_mensaje = 0
-        self.mensaje = ""
-        self.problema_actual = ""
+        self.scaled_images = {}
+        self.sizes = {}
+        self._ajustar_imagenes()
+
+        # estado del juego
+        self.nivel_actual     = self._nivel_from_dificultad(dificultad)
+        self.puntuacion        = 0
+        self.jugadas_totales   = 0
+        self.racha              = 0
+        self.tiempo_mensaje     = 0
+        self.mensaje            = ""
+        self.problema_actual    = ""
         self.respuesta_correcta = None
-        self.explicacion = ""
+        self.explicacion        = ""
         self.opcion_botones: list[Boton] = []
         self.generar_problema()
+        # posición vertical para dibujar opciones
+        self.ui_elements["opciones_y"] = self.navbar_height + self.sy(300)
 
     def cargar_imagenes(self):
-        """Override: asigna imágenes usadas en draw()"""
-        self.dino_img = self.images.get("dino4")
-        self.mapa_img = self.images.get("mapa")
+        """Override: almacena referencias para escalar después"""
+        self.original_images = {
+            "dino": self.images.get("dino4"),
+            "mapa": self.images.get("mapa")
+        }
+
+    def _ajustar_imagenes(self):
+        """Escala 'dino' y 'mapa' según el tamaño actual de la ventana"""
+        targets = {
+            "dino": (int(self.ANCHO * 0.15), None),
+            "mapa": (int(self.ANCHO * 0.15), None)
+        }
+        for key, (w, h) in targets.items():
+            img = self.original_images.get(key)
+            if not img: continue
+            ow, oh = img.get_size()
+            h = h or int(oh * w / ow)
+            size = (w, h)
+            if self.sizes.get(key) != size:
+                self.sizes[key] = size
+                self.scaled_images[key] = pygame.transform.smoothscale(img, size)
+        self.dino_img = self.scaled_images.get("dino")
+        self.mapa_img = self.scaled_images.get("mapa")
 
     def generar_problema(self):
-        if self.nivel_actual == "Básico":
-            problema, respuesta, explicacion = self.generar_problema_logico_basico()
-        elif self.nivel_actual == "Medio":
-            problema, respuesta, explicacion = self.generar_problema_logico_medio()
-        else:
-            problema, respuesta, explicacion = self.generar_problema_logico_avanzado()
+        # mapear nivel a función
+        gen = {
+            "Básico":   self.generar_problema_logico_basico,
+            "Medio":    self.generar_problema_logico_medio,
+            "Avanzado": self.generar_problema_logico_avanzado
+        }[self.nivel_actual]
+        problema, respuesta, explicacion = gen()
         self.problema_actual = problema
         self.respuesta_correcta = respuesta
         self.explicacion = explicacion
@@ -153,80 +180,63 @@ class JuegoLogico(JuegoBase):
             self.generar_problema()
 
     def update(self, dt=None):
+        super().update(dt)
         if self.tiempo_mensaje > 0:
             self.tiempo_mensaje -= 1
         self.update_animacion_estrellas()
         self.update_particulas()
 
-    def draw(self, surface):
-        self.dibujar_fondo()
-        self.mostrar_titulo()
-
-        # Precompute common scaling values
-        margin_left = self.sx(50)
-        gap = self.sx(30)
-        nav_offset = self.sy(100)
-        content_y = self.navbar_height + nav_offset
-
-        # Dibujar imagen de dinosaurio (si existe)
-        dino_width = 0
-        if self.dino_img:
-            dino_width = int(self.ANCHO * 0.15)
-            ow, oh = self.dino_img.get_size()
-            dino_height = int(oh * dino_width / ow)
-            dino_scaled = pygame.transform.smoothscale(self.dino_img, (dino_width, dino_height))
-            self.pantalla.blit(dino_scaled, (margin_left, content_y))
-
-        # Dibujar caja de problema a la derecha de la imagen de dino
-        text_x = margin_left + dino_width + gap
-        text_y = content_y
-        text_w = self.ANCHO - text_x - margin_left
-        text_h = max(self.sy(100), int(self.ALTO * 0.15))
-        dibujar_caja_texto(
-            self.pantalla,
-            text_x, text_y,
-            text_w, text_h,
-            color=(255, 255, 240, 230),
-            radius=self.sx(20)
-        )
-        enunciado_fuente = obtener_fuente(max(self.sf(40), int(self.ALTO * 0.05)), negrita=True)
-        self.mostrar_texto(
-            self.problema_actual,
-            x=text_x,
-            y=text_y,
-            w=text_w,
-            h=text_h,
-            fuente=enunciado_fuente,
-            color=(30, 30, 30),
-            centrado=True
-        )
-
-        # Dibujar las opciones de respuesta
-        opciones_y = text_y + text_h + self.sy(40)
-        self.dibujar_opciones(y0=opciones_y)
-
-        # Dibujar feedback y animaciones adicionales
+    def draw(self, surface=None):
+        pantalla = surface or self.pantalla
+        # fondo, título, puntaje y racha
+        super().draw(pantalla)
+        # Dino con enunciado
+        self._draw_dino_y_enunciado()
+        # Opciones y feedback
+        y_opts = self.ui_elements.get("opciones_y", self.navbar_height + self.sy(300))
+        self.dibujar_opciones(y0=y_opts)
         self.dibujar_feedback()
         self.draw_animacion_estrellas()
         self.draw_particulas()
+        # Operación actual (mostrada por JuegoBase)
+        self.mostrar_operacion()
+        # Dibuja el mapa en esquina
+        self._draw_mapa()
 
-        # Mostrar puntaje
-        self.mostrar_puntaje(self.puntuacion, self.jugadas_totales, "Puntaje")
+    def _draw_dino_y_enunciado(self):
+        mx, gap = self.sx(50), self.sx(30)
+        # Bajar un poco para no solaparse con el título
+        y0 = self.navbar_height + self.sy(180)
 
-        # Dibujar el mapa en la esquina inferior derecha, justo arriba de la racha
-        if self.mapa_img:
-            map_width = int(self.ANCHO * 0.15)
-            ow, oh = self.mapa_img.get_size()
-            map_height = int(oh * map_width / ow)
-            map_x = self.ANCHO - map_width - self.sx(20)
-            map_y = self.ALTO - map_height - self.sy(100)
-            self.pantalla.blit(
-                pygame.transform.smoothscale(self.mapa_img, (map_width, map_height)),
-                (map_x, map_y)
-            )
+        # Dino
+        if self.dino_img:
+            self.pantalla.blit(self.dino_img, (mx, y0 - self.dino_img.get_height() // 2))
+        # Caja de texto con problema
+        x_text = mx + (self.dino_img.get_width() if self.dino_img else 0) + gap
+        w_text = self.ANCHO - x_text - mx
+        h_text = max(self.sy(100), int(self.ALTO * 0.15))
+        dibujar_caja_texto(self.pantalla, x_text, y0 - h_text // 2, w_text, h_text,
+                           color=(255,255,240,230), radius=self.sx(20))
+        self.mostrar_texto(
+            self.problema_actual,
+            x_text, y0 - h_text // 2, w_text, h_text,
+            fuente=obtener_fuente(max(self.sf(40), int(self.ALTO*0.05)), negrita=True),
+            color=(30,30,30), centrado=True
+        )
 
-        # Mostrar la racha
-        self.mostrar_racha()
+    def _draw_mapa(self):
+        if not self.mapa_img:
+            return
+        w, h = self.mapa_img.get_size()
+        x = self.ANCHO - w - self.sx(20)
+        y = self.ALTO - h - self.sy(100)
+        self.pantalla.blit(self.mapa_img, (x, y))
+
+    def on_resize(self, ancho, alto):
+        super().on_resize(ancho, alto)
+        self._ajustar_imagenes()
+        # reajusta posición de opciones
+        self.ui_elements["opciones_y"] = self.navbar_height + self.sy(300)
 
 
 
