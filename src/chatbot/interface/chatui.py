@@ -220,3 +220,10 @@ class BotScreen:
 
     def _draw_burbuja(self, pantalla, linea, color, bg, ali, y):
         draw_burbuja(pantalla, self.font, self.chat_x, self.chat_w, linea, color, bg, ali, y)
+
+    def stop_audio(self):
+        if self.input_manager._voz_reproduciendo:
+            if self.chatbot:
+                self.chatbot.detener_audio()
+            self.input_manager._voz_reproduciendo = False
+            # Aquí puedes agregar lógica adicional para detener el audio si es necesario

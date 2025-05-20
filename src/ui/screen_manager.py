@@ -7,6 +7,9 @@ class ScreenManager:
         self.current_screen = None
 
     def set_screen(self, screen):
+        # Detener audio si el screen actual tiene audio reproduciéndose
+        if self.current_screen and hasattr(self.current_screen, "stop_audio"):
+            self.current_screen.stop_audio()
         self.current_screen = screen
 
     def get_screen(self):
@@ -108,4 +111,4 @@ def update_screen(screen_manager, dt=None):
 def draw_screen(screen_manager, surface):
     """Draw the current screen."""
     screen_manager.draw(surface)
-    
+
