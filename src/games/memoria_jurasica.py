@@ -19,6 +19,10 @@ def cargar_sonido(nombre):
     ruta = os.path.join(SND_PATH, nombre)
     return pygame.mixer.Sound(ruta)
 
+MOSTRAR_CARTAS_TIEMPO = 1500
+TIEMPO_ESPERA_PAR = 600
+TIEMPO_MENSAJE = 1200
+
 class JuegoMemoriaJurasica(JuegoBase):
     DIFICULTAD_CONFIG = {
         "Fácil":   {"nivel": "Básico",   "pares": 6,  "filas": 3, "columnas": 4},
@@ -106,37 +110,44 @@ class JuegoMemoriaJurasica(JuegoBase):
     def generar_operaciones(self, nivel, num_pares):
         operaciones = []
         resultados_usados = set()
+
+        def crear_operacion(a, b, operador):
+            if operador == '+':
+                return f"{a} + {b}", a + b
+            elif operador == '-':
+                return f"{a} - {b}", a - b
+            elif operador == '×':
+                return f"{a} × {b}", a * b
+            elif operador == '÷':
+                return f"{a} ÷ {b}", a // b
+
         while len(operaciones) < num_pares:
             if nivel == "Básico":
                 a, b = random.randint(1, 10), random.randint(1, 10)
-                op = f"{a} + {b}"
-                res = a + b
+                op, res = crear_operacion(a, b, '+')
             elif nivel == "Medio":
                 a, b = random.randint(2, 10), random.randint(2, 10)
-                op = f"{a} × {b}"
-                res = a * b
+                op, res = crear_operacion(a, b, '×')
             else:  # Avanzado
-                tipo = random.choice(['suma', 'resta', 'mult', 'div'])
-                if tipo == 'suma':
+                tipo = random.choice(['+', '-', '×', '÷'])
+                if tipo == '+':
                     a, b = random.randint(10, 50), random.randint(10, 50)
-                    op = f"{a} + {b}"
-                    res = a + b
-                elif tipo == 'resta':
+                elif tipo == '-':
                     a, b = random.randint(20, 60), random.randint(10, 30)
-                    op = f"{a} - {b}"
-                    res = a - b
-                elif tipo == 'mult':
+                elif tipo == '×':
                     a, b = random.randint(3, 12), random.randint(3, 12)
-                    op = f"{a} × {b}"
-                    res = a * b
                 else:  # División exacta
                     b = random.randint(2, 10)
                     res = random.randint(2, 10)
                     a = b * res
-                    op = f"{a} ÷ {b}"
+                    op, res = crear_operacion(a, b, '÷')
+                    continue
+                op, res = crear_operacion(a, b, tipo)
+
             if res not in resultados_usados:
                 resultados_usados.add(res)
                 operaciones.append((op, res))
+
         return operaciones
 
     def handle_event(self, event):
@@ -178,14 +189,14 @@ class JuegoMemoriaJurasica(JuegoBase):
 
     def actualizar_logica(self):
         if self.mostrar_cartas_inicio:
-            if pygame.time.get_ticks() - self.tiempo_inicio_mostrar > 1500:
+            if pygame.time.get_ticks() - self.tiempo_inicio_mostrar > MOSTRAR_CARTAS_TIEMPO:
                 for carta in self.cartas:
                     if carta['id'] not in self.cartas_emparejadas:
                         carta['volteada'] = False
                 self.mostrar_cartas_inicio = False
 
         if self.procesando_par and self.carta_primera and self.carta_segunda:
-            if pygame.time.get_ticks() - self.tiempo_espera > 600:
+            if pygame.time.get_ticks() - self.tiempo_espera > TIEMPO_ESPERA_PAR:
                 if self.carta_primera['pareja_id'] == self.carta_segunda['id']:
                     self.cartas_emparejadas.add(self.carta_primera['id'])
                     self.cartas_emparejadas.add(self.carta_segunda['id'])
@@ -211,7 +222,6 @@ class JuegoMemoriaJurasica(JuegoBase):
                     self.nivel_completado = True
 
     def draw(self, surface=None):
-        # Mejor uso de métodos base y cuadrícula adaptativa con proporción
         pantalla = surface if surface else self.pantalla
         self.pantalla = pantalla  # Para mantener consistencia interna
 
@@ -233,7 +243,7 @@ class JuegoMemoriaJurasica(JuegoBase):
         espacio_h, espacio_v = 18, 18
 
         margen_lateral = 40
-        margen_superior = self.navbar_height + 30 + 60 + 10 if hasattr(self, "navbar_height") else 100
+        margen_superior = self.navbar_height + 30 + 60 + 50  # Ajuste para evitar que las cartas cubran el título
         margen_inferior = 80
 
         area_w = self.pantalla.get_width() - 2 * margen_lateral
@@ -271,7 +281,7 @@ class JuegoMemoriaJurasica(JuegoBase):
             self.carta_rects.append((rect, carta))
 
         # --- Mensaje temporal ---
-        if self.mensaje and pygame.time.get_ticks() - self.tiempo_mensaje < 1200:
+        if self.mensaje and pygame.time.get_ticks() - self.tiempo_mensaje < TIEMPO_MENSAJE:
             self.mostrar_texto(
                 self.mensaje,
                 x=0,
