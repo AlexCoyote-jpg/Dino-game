@@ -1,9 +1,9 @@
 import pygame
 import random
 import os
-from games.cards import dibujar_carta_generica
+from .cards import dibujar_carta_generica
 from core.juego_base import JuegoBase
-from ui.components.utils import Boton  # <-- Añade esta línea
+from ui.components.utils import Boton  # <-- Importación relativa mejorada
 
 IMG_PATH = os.path.join("assets", "imagenes")
 SND_PATH = os.path.join("assets", "sonidos")
@@ -211,61 +211,44 @@ class JuegoMemoriaJurasica(JuegoBase):
                     self.nivel_completado = True
 
     def draw(self, surface=None):
+        # Mejor uso de métodos base y cuadrícula adaptativa con proporción
         pantalla = surface if surface else self.pantalla
         self.pantalla = pantalla  # Para mantener consistencia interna
 
         # Fondo y navbar
         self.dibujar_fondo()
 
-        navbar_height = self.navbar_height if hasattr(self, "navbar_height") else 60
-        info_top = navbar_height + 10
+        # --- Título y puntaje usando JuegoBase ---
+        if hasattr(self, "mostrar_titulo"):
+            self.mostrar_titulo()
+        if hasattr(self, "pares_encontrados") and hasattr(self, "total_pares"):
+            self.mostrar_puntaje(self.pares_encontrados, self.total_pares, "Pares")
+        else:
+            self.mostrar_puntaje(self.config.get("juegos_ganados", 0), self.config.get("juegos_totales", 0))
 
-        # --- Fondo info y título debajo de la barra ---
-        info_height = 70
-        pygame.draw.rect(
-            self.pantalla, (255, 255, 255, 180),
-            (20, info_top, self.pantalla.get_width() - 40, info_height),
-            border_radius=18
-        )
-        self.mostrar_texto(
-            f"Memoria Jurásica - {self.nivel_actual}",
-            x=0,
-            y=self.navbar_height + 28,  # Más espacio respecto a la navbar
-            w=self.pantalla.get_width(),
-            h=40,
-            fuente=self.fuente_titulo,
-            color=self.color_titulo,
-            centrado=True
-        )
-       
-        
-
-        # --- Calcular cuadrícula adaptativa ---
-        num = len(self.cartas)
+        # --- Calcular cuadrícula adaptativa manteniendo proporción ---
         filas, columnas = self.filas, self.columnas
         base_ancho, base_alto = 90, 110
+        aspect_ratio = base_ancho / base_alto
         espacio_h, espacio_v = 18, 18
 
-        # Espacio disponible debajo de la barra y título
         margen_lateral = 40
-        margen_superior = info_top + info_height + 10
+        margen_superior = self.navbar_height + 30 + 60 + 10 if hasattr(self, "navbar_height") else 100
         margen_inferior = 80
 
         area_w = self.pantalla.get_width() - 2 * margen_lateral
         area_h = self.pantalla.get_height() - margen_superior - margen_inferior
 
-        total_ancho = columnas * base_ancho + (columnas - 1) * espacio_h
-        total_alto = filas * base_alto + (filas - 1) * espacio_v
-
-        factor = min(
-            area_w / total_ancho,
-            area_h / total_alto,
-            1.0
-        )
-        card_w = int(base_ancho * factor)
-        card_h = int(base_alto * factor)
-        espacio_h = int(espacio_h * factor)
-        espacio_v = int(espacio_v * factor)
+        max_card_w = (area_w - (columnas - 1) * espacio_h) / columnas
+        max_card_h = (area_h - (filas - 1) * espacio_v) / filas
+        if max_card_w / max_card_h > aspect_ratio:
+            card_h = int(max_card_h)
+            card_w = int(card_h * aspect_ratio)
+        else:
+            card_w = int(max_card_w)
+            card_h = int(card_w / aspect_ratio)
+        espacio_h = int(espacio_h * (card_w / base_ancho))
+        espacio_v = int(espacio_v * (card_h / base_alto))
         total_ancho = columnas * card_w + (columnas - 1) * espacio_h
         total_alto = filas * card_h + (filas - 1) * espacio_v
 
@@ -292,7 +275,7 @@ class JuegoMemoriaJurasica(JuegoBase):
             self.mostrar_texto(
                 self.mensaje,
                 x=0,
-                y=info_top + info_height + 10,
+                y=inicio_y - 40,
                 w=self.pantalla.get_width(),
                 h=30,
                 fuente=self.fuente,
@@ -327,6 +310,3 @@ class JuegoMemoriaJurasica(JuegoBase):
         )
         btn_silencio.draw(self.pantalla)
         self.btn_silencio_rect = btn_silencio.rect
-
-        # --- Puntaje ---
-        self.mostrar_puntaje(self.pares_encontrados, self.total_pares, "Pares")
